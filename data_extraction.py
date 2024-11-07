@@ -2,6 +2,14 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import praw
 
+# task list
+'''
+- collect reddit data from command line with scores
+- data reddit data and parse with sentiment dictionary into .csv
+- collect data from alpha query as .csv
+- collect yfinance news article header sentiment
+'''
+
 # Reddit API credentials
 client_id = '0g9lCAnzXBGm_NfCtRG1Eg'
 client_secret = '_HyRrtKJxfT6MhOocqC_L6s9mhNjKQ'

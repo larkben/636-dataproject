@@ -2,6 +2,8 @@
 # place packages here
 pandas
 beautifulsoup4                  # able to scrape websites for data in this case (hedgefunds)
+praw
+textblob
 # need a reddit scrapper
 # pytorch # uncomment if an when we start using it
 #
