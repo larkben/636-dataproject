@@ -1,9 +1,7 @@
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
 import time
 import requests
-import pandas as pd
 
 #uses selenium to get the information from twitter.
 #A specific link is used with the %24 representing $ symbol for driver.get

@@ -4,6 +4,7 @@ pandas
 beautifulsoup4                  # able to scrape websites for data in this case (hedgefunds)
 praw
 textblob
+selenium
 # need a reddit scrapper
 # pytorch # uncomment if an when we start using it
 #
