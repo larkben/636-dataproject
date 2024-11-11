@@ -1,12 +1,14 @@
 import pandas as pd
 import praw
+import time
 
 # task list
 '''
-- collect reddit data from command line with scores
-- data reddit data and parse with sentiment dictionary into .csv
-- collect data from alpha query as .csv
-- collect yfinance news article header sentiment
+- collect reddit data from command line with scores                 [X] - need to get earnings threads prior to reports
+- data reddit data and parse with sentiment dictionary into .csv    [X] - parsed, just need to lose author as it's non-important
+- collect data from alpha query as .csv                             []
+- collect yfinance news article header sentiment                    []
+- add timing to determine data collection time
 '''
 
 # Reddit API credentials
@@ -30,12 +32,14 @@ def get_comments_with_keyword(thread_url, keyword):
 
     # Search through each comment for the keyword
     for comment in submission.comments.list():
-        if keyword.lower() in comment.body.lower():  # Case-insensitive search
+        if keyword.lower() in comment.body.lower():                                 # case-insensitive search
+            # logging for runtime
+            print("Found relevant comment!")
             matching_comments.append({
-                'author': comment.author.name if comment.author else '[deleted]',
+                #'author': comment.author.name if comment.author else '[deleted]',  # author
                 'comment': comment.body,
-                'score': comment.score,
-                'created_utc': comment.created_utc
+                'score': comment.score,                                             # upvotes
+                'created_utc': comment.created_utc                                  # time created
             })
 
     return matching_comments
@@ -51,16 +55,23 @@ def save_comments_to_csv(comments, filename="filtered_comments.csv"):
 
 # Example usage
 if __name__ == "__main__":
+    startTime = time.time()
+
     thread_url = "https://www.reddit.com/r/wallstreetbets/comments/1gh9050/weekly_earnings_thread_114_118/"  # Replace with your desired thread URL
     keyword = "ARM"  # Keyword to search for in comments
 
     comments = get_comments_with_keyword(thread_url, keyword)
     
-    # Print the results to the console
+    # debugging: logging comments to console after request and collection completed
+    '''
     for idx, comment in enumerate(comments, 1):
         print(f"{idx}. Author: {comment['author']}\nScore: {comment['score']}\nComment: {comment['comment']}\n")
+    '''
 
-    # Save the comments to a CSV file
+    # finalize: save comments to .csv file for manipulation
     save_comments_to_csv(comments, filename="data/filtered_comments.csv")
+    endTime = time.time()
 
-print("Hello World!")
+    print("Collection Completed in ", endTime - startTime, "seconds!")
+
+print("Program Executed!")
