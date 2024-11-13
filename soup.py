@@ -74,32 +74,37 @@ def get_ticker(company_name):
         return "Ticker not found"
 
 if __name__ == '__main__':
-    data_finance, data_stock = get_info(get_ticker('Reddit'))
+    data_finance, data_stock = get_info(get_ticker('facebook'))
 
     data_qual = []
     data_quan = []
     data_stk = []
 
+    data_temp = [('<td>Exchange</td>', '<td>NASDAQ</td>'), ('<td>Sector</td>', '<td>Communication Services</td>'), ('<td>Industry</td>', '<td>Internet Content &amp; Information</td>'), ('<td>Common Shares Outstanding</td>', '<td class="indicator-figure">2.52B</td>'), ('<td>Free Float</td>', '<td class="indicator-figure">2.18B</td>'), ('<td>Market Capitalization</td>', '<td class="indicator-figure">$1476.37B</td>'), ('<td>Average Volume (Last 20 Days)</td>', '<td class="indicator-figure">13.04M</td>'), ('<td>Beta (Past 60 Months)</td>', '<td class="indicator-figure">1.22</td>'), ('<td>Percentage Held By Insiders (Latest Annual Proxy Report)</td>', '<td class="indicator-figure">13.71%</td>'), ('<td>Percentage Held By Institutions (Latest 13F Reports)</td>', '<td class="indicator-figure">79.91%</td>'), ('<td>Annual Dividend (Based on Last Quarter)</td>', '<td class="indicator-figure">$2.00</td>'), ('<td>Dividend Yield (Based on Last Quarter)</td>', '<td class="indicator-figure">0.34%</td>')]
+
+
     for data in data_finance:
         data_qual.append(data[0].split('<td>')[1].split('</td>')[0])
         data_quan.append(data[1].split('>')[1].split('<')[0])
 
-    for data in data_stock:
-        print(data[0], '\n', data[1])
+#    for data in data_stock:
+#        print(data[0], '\n', data[1])
 
-    for data in data_stock:
+
+    for data in data_temp:
         try:
             data_qual.append(data[0].split('<td>')[1].split('</td>')[0])
         except IndexError:
             data_qual.append("Qualitative data not found")
-        if data[1][:9] == "td class=":
+        if data[1].startswith('<td class='):
             data_quan.append(data[1].split('>')[1].split('<')[0])
         else:
             data_quan.append(data[1].split('<td>')[1].split('</td>')[0])
 
-    print(data_stock)
-    for i in range(len(data_qual)):
-        print(data_qual[i], "\n", data_quan[i])
+    print(data_quan)
+    print(data_qual)
+
+
    # for result in results:
    #     print(result)
 
