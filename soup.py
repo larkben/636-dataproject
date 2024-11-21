@@ -11,6 +11,7 @@ import requests
 import re
 import pandas as pd
 from selenium.webdriver.support.wait import WebDriverWait
+import csv
 
 def get_info(query):
 
@@ -48,7 +49,7 @@ def get_ticker(company_name):
     # Fetch the search results page from Yahoo Finance
     search_url = f"https://finance.yahoo.com/lookup?s={search_query}"
 
-    driver = webdriver.Edge()
+    driver = webdriver.Firefox()
 
     pattern = re.compile(re.escape(search_query), re.IGNORECASE)
 
@@ -73,6 +74,20 @@ def get_ticker(company_name):
     except Error as e:
         return "Ticker not found"
 
+def save_to_csv(data_qual, data_quan, filename='data/financials.csv'):
+    # Combine qualitative and quantitative data
+    combined_data = list(zip(data_qual, data_quan))
+
+    # Write data to a CSV file
+    with open(filename, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        # Write the header
+        writer.writerow(['Qualitative', 'Quantitative'])
+        # Write the rows
+        writer.writerows(combined_data)
+
+    print(f"Data saved to {filename}")
+
 if __name__ == '__main__':
     data_finance, data_stock = get_info(get_ticker('facebook'))
 
@@ -90,7 +105,6 @@ if __name__ == '__main__':
 #    for data in data_stock:
 #        print(data[0], '\n', data[1])
 
-
     for data in data_temp:
         try:
             data_qual.append(data[0].split('<td>')[1].split('</td>')[0])
@@ -101,10 +115,8 @@ if __name__ == '__main__':
         else:
             data_quan.append(data[1].split('<td>')[1].split('</td>')[0])
 
+    # save found data to csv
+    save_to_csv(data_qual, data_quan)
+
     print(data_quan)
     print(data_qual)
-
-
-   # for result in results:
-   #     print(result)
-
