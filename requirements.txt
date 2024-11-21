@@ -1,7 +1,9 @@
 ###### Requirements without Version Specifiers ######
 # place packages here
 pandas
-beautifulsoup4                  # able to scrape websites for data in this case (hedgefunds)
-# need a reddit scrapper
+beautifulsoup4
+praw
+textblob
+selenium
+"yfinance[optional]"
 # pytorch # uncomment if an when we start using it
-#
