@@ -1,38 +1,41 @@
 # 636-dataproject
-The project for 636 involving analyzing sentiment and financial indicators from both Wallstreet and Retail to predict option future.
+
+This project is designed to take retail sentiment from social media sources in conjunction with financial news along with company financials to deliver either a negative, positive or neutral earnings report.
+
+> current design supports only `reddit` and `yahoo finance` additional sources can be integrated with some further engineering.
 
 ## directory
 
-.venv is the packages being used with python
-requirements.txt is the packages install script
+```sh
+> .venv
+> data
+  > ...
+  > .csv-files
+> .. python scripts
+```
 
-## editing the package list
+## viewing and editing the package list
 
-`pip freeze` only works once in the python enviroment; fetches all packages and adds them to requirements.txt
+```sh
+pip freeze # only works once in the python enviroment; fetches all packages/versions and prints them to console
+```
 
-## scrapers
-Reddit: </br>
-Twitter: </br>
-Google Scraper For Sentiment Analysis: https://github.com/gyanesh-m/Sentiment-analysis-of-financial-news-data </br>
-Beautiful Soup </br>
+## active scrapers
+Reddit: WallStreeBets </br>
+Beautiful Soup: Yahoo Finance </br>
 
-## setup
+## run it yourself
 
-All OS: </br>
-- must have python 3 or higher installed
+> must have python 3 or higher installed
 
-Mac OSX / Linux: </br>
-`python -m venv .venv; source ./.venv/bin/activate; pip install --upgrade pip; pip install -r requirements.txt`
-
-Windows: </br>
-`write script here`
+```sh
+python -m venv .venv; source ./.venv/bin/activate; pip install --upgrade pip; pip install -r requirements.txt
+```
 
 ## clean up
 
-Mac OSX / Linux (if in enviroment) </br>
-`deactivate; rm -rf .venv` removes the packages folder from directory
-else: </br>
-`rm -rf .venv`
+```sh
+deactivate       # exits python enviroment
 
-Windows </br>
-`write script here`
+rm -rf .venv     # deletes python enviroment
+```
