@@ -4,17 +4,6 @@ import time
 import requests
 from bs4 import BeautifulSoup
 import re
-# import yfinance as yf
-
-# task list
-'''
-- collect reddit data from command line with scores                 [X] - need to get earnings threads prior to reports
-- data reddit data and parse with sentiment dictionary into .csv    [X] - parsed, just need to lose author as it's non-important
-- collect data from alpha query as .csv                             []
-- collect yfinance news article header sentiment                    []
-- add timing to determine data collection time                      [X]
-- would be sort of cool to be able to determine earnings for that day based on daily thread in market?
-'''
 
 # Reddit API credentials
 client_id = '0g9lCAnzXBGm_NfCtRG1Eg'
@@ -80,8 +69,8 @@ def save_comments_to_csv(comments, filename="filtered_comments.csv"):
 if __name__ == "__main__":
     startTime = time.time()
 
-    thread_url = "https://www.reddit.com/r/wallstreetbets/comments/1gh9050/weekly_earnings_thread_114_118/"  # Replace with your desired thread URL
-    keyword = "ARM"  # Keyword to search for in comments
+    thread_url = "https://www.reddit.com/r/wallstreetbets/comments/1grybzd/weekly_earnings_thread_1118_1122/"  # Replace with your desired thread URL
+    keyword = "POWL"  # Keyword to search for in comments
 
     comments = get_comments_with_keyword(thread_url, keyword)
 
@@ -94,7 +83,7 @@ if __name__ == "__main__":
     '''
 
     # finalize: save comments to .csv file for manipulation
-    save_comments_to_csv(comments, filename="data/filtered_comments.csv")
+    save_comments_to_csv(comments, filename="data/powl.csv")
 
     endTime = time.time()
 

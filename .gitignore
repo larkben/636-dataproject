@@ -1,2 +1,7 @@
 # python env packages
 .venv
+
+# trash
+.ropeproject
+.mypy_cache
+.ruff_cache
