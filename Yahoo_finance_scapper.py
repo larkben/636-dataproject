@@ -40,7 +40,7 @@ try:
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
     # Find all headline elements
-    headlines = soup.find_all('h3', class_='Mb(5px)')
+    headlines = soup.find_all('h3', class_='clamp')
     print(f"Total headlines found after scrolling: {len(headlines)}")  # Debugging: Check total count
 
     # Open a CSV file to save filtered headlines
