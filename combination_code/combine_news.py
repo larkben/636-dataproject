@@ -25,37 +25,53 @@ def process_file(file_path, company_name):
                 published = "Unknown"
                 source = "Unknown"
 
-                for line in lines:
+                for i, line in enumerate(lines):
                     line = line.strip()
-                    
+
+                    # Handle Walmart-specific case where source is in the title
+                    if company_name == "news_wmt" and "–" in line and title is None:
+                        parts = line.split(" – ", 1)
+                        title = parts[0].strip()
+                        source = parts[1].strip() if len(parts) > 1 else "Unknown"
+                        continue
+
                     # Identify title as the first meaningful line
                     if title is None and len(line) > 10 and not re.search(r"(days ago|[-+]\d+\.\d+%)", line) and "Source:" not in line:
                         title = line
-                    
-                    # Identify published dates
+                        continue
+
+                    # Identify published dates and move them out of the summary
                     if "Published:" in line:
                         published = line.split("Published:")[1].strip()
-                    elif re.search(r"days ago", line):
-                        published = line  # Keep relative date as is
-                    
+                        continue
+                    elif re.search(r"days ago", line) and published == "Unknown":
+                        published = "Unknown"  # For Powell or others with "days ago"
+                        continue
+
                     # Identify stock changes
-                    elif re.search(r"[-+]\d+\.\d+%", line):
+                    if re.search(r"[-+]\d+\.\d+%", line):
                         stock_change = line
-                    
+                        continue
+
                     # Extract source
-                    elif "Source:" in line:
+                    if "Source:" in line:
                         source = line.split("Source:")[1].strip()
+                        continue
 
-                    # Add all other lines to the summary
-                    else:
+                    # Add remaining lines to the summary (ignore title line)
+                    if i > 0:  # Ensure the first line (title) is not added to the summary
                         summary_lines.append(line)
-
-                # Append stock change to the summary if available
-                if stock_change:
-                    summary_lines.append(f"Stock Change: {stock_change}")
 
                 # Combine summary lines into one string
                 summary = " ".join(summary_lines).strip()
+
+                # Remove title if it inadvertently appears in the summary
+                if title in summary:
+                    summary = summary.replace(title, "").strip()
+
+                # Append stock change to the summary if available
+                if stock_change:
+                    summary += f" Stock Change: {stock_change}"
 
                 # Append the article to the list if valid
                 if title:
