@@ -13,7 +13,7 @@ def process_file(file_path, company_name):
 
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
-        # Split entries based on either bullet points or quoted titles
+        # Split entries based on bullet points or quoted titles
         entries = content.split("•\n") if "•" in content else re.split(r'(?<=\n)"', content.strip())
 
         for entry in entries:
@@ -28,8 +28,8 @@ def process_file(file_path, company_name):
                 for line in lines:
                     line = line.strip()
                     
-                    # Identify the title as the first meaningful line
-                    if title is None and not re.search(r"days ago", line) and not re.search(r"[-+]\d+\.\d+%", line) and "Source:" not in line:
+                    # Identify title as the first meaningful line
+                    if title is None and len(line) > 10 and not re.search(r"(days ago|[-+]\d+\.\d+%)", line) and "Source:" not in line:
                         title = line
                     
                     # Identify published dates
@@ -45,24 +45,17 @@ def process_file(file_path, company_name):
                     # Extract source
                     elif "Source:" in line:
                         source = line.split("Source:")[1].strip()
+
+                    # Add all other lines to the summary
                     else:
-                        # Try to identify source using known patterns if 'Source:' is not explicitly mentioned
-                        known_sources = ["Reuters", "CNBC", "Forbes", "Bloomberg", "MarketWatch", 
-                                         "TechCrunch", "Zacks", "Wall Street Journal", 
-                                         "Seeking Alpha", "Financial Times", "The Guardian"]
-                        for known_source in known_sources:
-                            if known_source in line and source == "Unknown":
-                                source = known_source
-                    
-                    # Add remaining lines to the summary
-                    summary_lines.append(line)
+                        summary_lines.append(line)
+
+                # Append stock change to the summary if available
+                if stock_change:
+                    summary_lines.append(f"Stock Change: {stock_change}")
 
                 # Combine summary lines into one string
                 summary = " ".join(summary_lines).strip()
-
-                # Append stock change to the summary
-                if stock_change:
-                    summary += f" Stock Change: {stock_change}"
 
                 # Append the article to the list if valid
                 if title:
