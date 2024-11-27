@@ -4,12 +4,11 @@ from bs4 import BeautifulSoup
 import csv
 import time
 
-
 # Keywords to filter headlines
 keywords = ["Palo Alto", "PANW"]  # Add your keywords here
 
 # Path to your ChromeDriver (replace with the actual path to chromedriver)
-CHROMEDRIVER_PATH = r'C:\Users\Corey\Desktop\Coding Projects\.vscode\chromedriver-win32\chromedriver.exe'
+CHROMEDRIVER_PATH = r'C:\Users\corey\OneDrive\Desktop\chromedriver-win64\chromedriver.exe'
 
 # Set up the Selenium WebDriver with headless mode for efficiency
 service = Service(CHROMEDRIVER_PATH)
@@ -18,7 +17,7 @@ options.add_argument('--headless')
 driver = webdriver.Chrome(service=service, options=options)
 
 try:
-    # Navigate to Yahoo Finance Earnings page
+    # Navigate to Yahoo Finance News page
     url = 'https://finance.yahoo.com/quote/PANW/news/'
     driver.get(url)
 
@@ -44,21 +43,28 @@ try:
     csv_filename = f'{keywords}.csv'
 
     # Find all headline elements
-    headlines = soup.find_all('h3', class_='clamp')
-    print(f"Total headlines found after scrolling: {len(headlines)}")  # Debugging: Check total count
+    articles = soup.find_all('li', class_='stream-item story-item yf-1usaaz9')
+    print(f"Total headlines found after scrolling: {len(articles)}")  # Debugging: Check total count
 
-    # Open a CSV file to save filtered headlines
+    # Open a CSV file to save filtered headlines and dates
     with open(csv_filename, 'w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
-        writer.writerow(['Headline'])  # Write header
+        writer.writerow(['Headline', 'Date'])  # Write header
 
-        # Write each headline that contains a keyword to the CSV
-        for headline in headlines:
-            title = headline.get_text().strip()
-            if title and any(keyword.lower() in title.lower() for keyword in keywords):
-                writer.writerow([title])
-                print("Matching headline:", title)  # Print each matching headline to the console
+        # Extract and write each headline and date
+        for article in articles:
+            headline_tag = article.find('h3')  # Adjust selector as needed
+            date_tag = article.find('div', class_='publishing yf-1weyqlp')
 
-    print("Filtered headlines have been saved to 'filtered_yahoo_finance_headlines.csv'")
+            if headline_tag:
+                title = headline_tag.get_text().strip()
+                date = date_tag.get_text().strip()
+
+                # Check for keywords in the headline
+                if any(keyword.lower() in title.lower() for keyword in keywords):
+                    writer.writerow([title, date])  # Write headline and date to CSV
+                    print("Matching article:", title, "| Date:", date)  # Debugging output
+
+    print(f"Filtered headlines have been saved to '{csv_filename}'")
 finally:
     driver.quit()
