@@ -27,12 +27,18 @@ def date_to_unix(date_str, date_format="%Y-%m-%d %H:%M:%S"):
     return dt.timestamp()
 
 # Function for sentiment analysis using Twitter-RoBERTa
-def predict_roberta_sentiment(comment):
-    inputs = tokenizer(comment, return_tensors="pt", truncation=True, padding=True, max_length=512)
-    outputs = model(**inputs)
-    probabilities = softmax(outputs.logits, dim=-1).detach().numpy()[0]
-    sentiment_score = probabilities[2] - probabilities[0]  # Positive - Negative
-    return sentiment_score
+def analyze_sentiment_bert(model_name, comments):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+
+    sentiments = []
+    for comment in comments:
+        inputs = tokenizer(comment, return_tensors="pt", truncation=True, padding=True, max_length=512)
+        outputs = model(**inputs)
+        probabilities = softmax(outputs.logits, dim=-1).detach().numpy()[0]
+        sentiment_score = probabilities[2] - probabilities[0]  # Positive - Negative
+        sentiments.append(sentiment_score)
+    return sentiments
 
 # Load Twitter-RoBERTa model and tokenizer
 model_name = "cardiffnlp/twitter-roberta-base-sentiment"
@@ -44,61 +50,87 @@ reddit_data = pd.read_csv('C:/Users/ash/PycharmProjects/636-dataproject/data/com
 stock_data = pd.read_csv('C:/Users/ash/PycharmProjects/636-dataproject/data/combined_prices.csv')  # Historical stock data
 news_data = pd.read_csv('C:/Users/ash/PycharmProjects/636-dataproject/data/combine_news.csv')  # News headlines
 
-# 2. Preprocessing
-# Reddit and News Sentiment
-reddit_data['RobertaSentiment'] = reddit_data['comment'].apply(lambda x: predict_roberta_sentiment(x))
-news_data['RobertaSentiment'] = news_data['Summary'].apply(lambda x: predict_roberta_sentiment(x))
-stock_data['Volume'] = stock_data['Volume'].apply(lambda x: float(x.replace(",", "")))
+# Sentiment Analysis for Reddit Data (Using RoBERTa)
+print("Analyzing Reddit data sentiment using RoBERTa...")
+reddit_model_name = "cardiffnlp/twitter-roberta-base-sentiment"
+reddit_data['SentimentScore'] = analyze_sentiment_bert(reddit_model_name, reddit_data['comment'])
 
-#news_data['WeightedSentiment'] = news_data['RobertaSentiment'] * news_data['score']
-reddit_data['WeightedSentiment'] = reddit_data['RobertaSentiment'] * reddit_data['score']
+# Sentiment Analysis for News Data (Using FinBERT)
+print("Analyzing News data sentiment using FinBERT...")
+news_model_name = "yiyanghkust/finbert-tone"
+news_data['SentimentScore'] = analyze_sentiment_bert(news_model_name, news_data['Summary'])
 
-#delt with some length and 0 issues
-stock_data['Open'] = stock_data['Open'].fillna(0)
-stock_data['Close'] = stock_data['Close'].fillna(0)
-stock_data['Volume'] = stock_data['Volume'].fillna(0)
+# Combine weighted sentiment scores
+reddit_data['WeightedSentiment'] = reddit_data['SentimentScore'] * reddit_data['score']
+news_data['WeightedSentiment'] = news_data['SentimentScore']
 
-#test lengths
-print(len(reddit_data['WeightedSentiment']), len(news_data['RobertaSentiment']))
+# Aggregating Reddit sentiment by company
+reddit_sentiment = reddit_data.groupby('company').agg(
+    WeightedSentimentSum=('WeightedSentiment', 'sum'),
+    ScoreSum=('score', 'sum')
+).reset_index()
 
-# Stock Data Features
+reddit_sentiment['WeightedSentiment'] = reddit_sentiment.apply(
+    lambda row: row['WeightedSentimentSum'] / row['ScoreSum'] if row['ScoreSum'] != 0 else 0,
+    axis=1
+)
+
+# Aggregating News sentiment by company
+news_sentiment = news_data.groupby('Company').agg(
+    SentimentAvg=('SentimentScore', 'mean')
+).reset_index()
+
+# Merging aggregated sentiment with stock data
+print("Combining sentiment data with stock performance data...")
+merged_data = stock_data.merge(reddit_sentiment[['company', 'WeightedSentiment']], left_on='Company', right_on='company', how='left')
+merged_data = merged_data.merge(news_sentiment, on='Company', how='left')
+# Preprocessing: Handle numeric conversions and missing values in stock data
+def clean_numeric_column(column):
+    """Converts a column to numeric by removing commas and handling NaN values."""
+    return column.apply(lambda x: float(str(x).replace(",", "")) if pd.notnull(x) else 0)
+
+stock_data['Volume'] = clean_numeric_column(stock_data['Volume'])
+stock_data['Open'] = clean_numeric_column(stock_data['Open'])
+stock_data['Close'] = clean_numeric_column(stock_data['Close'])
+
+# Merge sentiment data with stock data
+merged_data = stock_data.merge(reddit_sentiment[['company', 'WeightedSentiment']], left_on='Company', right_on='company', how='left')
+merged_data = merged_data.merge(news_sentiment, on='Company', how='left')
+
+# Handle any remaining NaN values
+merged_data[['Open', 'Close', 'Volume', 'WeightedSentiment', 'SentimentAvg']] = merged_data[
+    ['Open', 'Close', 'Volume', 'WeightedSentiment', 'SentimentAvg']
+].fillna(0)
+
+# Feature Scaling: Standardize stock data features
 scaler = StandardScaler()
-stock_data_scaled = scaler.fit_transform(stock_data[['Open', 'Close', 'Volume']])
+merged_data[['Open', 'Close', 'Volume']] = scaler.fit_transform(merged_data[['Open', 'Close', 'Volume']])
 
-# Convert stock data to categorical labels based on a threshold
-threshold = 0
-stock_labels = np.where(stock_data_scaled[:, 1] > threshold, 'Increase', 'Decrease')
+# Feature Engineering
+scaler = StandardScaler()
+merged_data[['Open', 'Close', 'Volume']] = scaler.fit_transform(merged_data[['Open', 'Close', 'Volume']])
 
-# 3. Feature Engineering
+# Create labels (binary classification: 'Increase' or 'Decrease')
+merged_data['Label'] = np.where(merged_data['Close'] > merged_data['Open'], 'Increase', 'Decrease')
 
-#in an attempt to fix length error, reshape the data
-min_length = min(len(reddit_data['WeightedSentiment']), len(news_data['RobertaSentiment']))
-reddit_sentiment_trimmed = reddit_data['WeightedSentiment'].values[:min_length].reshape(-1, 1)
-news_sentiment_trimmed = news_data['RobertaSentiment'].values[:min_length].reshape(-1, 1)
+# Prepare data for model training
+features = merged_data[['Open', 'Close', 'Volume', 'WeightedSentiment', 'SentimentAvg']].fillna(0)
+labels = merged_data['Label']
 
-combined_features = np.hstack([reddit_sentiment_trimmed, news_sentiment_trimmed])
+# Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(
+    features, labels, test_size=0.3, random_state=42)
 
-# Ensure the sizes match
-#same attempt to fix length error
-min_length = min(len(combined_features), len(stock_labels))
-combined_features = combined_features[:min_length]
-stock_labels = stock_labels[:min_length]
 
-# 4. Train/Test Split
-X_train, X_test, y_train, y_test = train_test_split(combined_features, stock_labels, test_size=0.3, random_state=42)
-
-# Convert the data into the format required by NaiveBayesClassifier, Naive uses dictionaries
-train_data = [({f'feature_{i}': X_train[j][i] for i in range(len(X_train[j]))}, y_train[j]) for j in range(len(X_train))]
-test_data = [({f'feature_{i}': X_test[j][i] for i in range(len(X_test[j]))}, y_test[j]) for j in range(len(X_test))]
-
-# 5. Train the NaiveBayesClassifier
+# Prepare data for NaiveBayesClassifier
+train_data = [({f'feature_{i}': X_train.iloc[j, i] for i in range(len(X_train.columns))}, y_train.iloc[j]) for j in range(len(X_train))]
+test_data = [({f'feature_{i}': X_test.iloc[j, i] for i in range(len(X_test.columns))}, y_test.iloc[j]) for j in range(len(X_test))]
+# Train the NaiveBayesClassifier
 classifier = NaiveBayesClassifier.train(train_data)
 
-# 6. Evaluation
-#uses nltk
+# Evaluation
 accuracy = nltk.classify.accuracy(classifier, test_data)
 print(f"Accuracy: {accuracy}")
 
-# Print the classification report
-y_pred = [classifier.classify({f'feature_{i}': x[i] for i in range(len(x))}) for x in X_test]
+y_pred = [classifier.classify({f'feature_{i}': X_test.iloc[j, i] for i in range(len(X_test.columns))}) for j in range(len(X_test))]
 print(classification_report(y_test, y_pred))
