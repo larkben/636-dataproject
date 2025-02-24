@@ -6,9 +6,7 @@ from bs4 import BeautifulSoup
 import re
 
 # Reddit API credentials
-client_id = '0g9lCAnzXBGm_NfCtRG1Eg'
-client_secret = '_HyRrtKJxfT6MhOocqC_L6s9mhNjKQ'
-user_agent = 'my_reddit_scraper/0.1 by u/benjamin'
+# insert reddit keys
 
 # Initialize the PRAW client
 reddit = praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent)
